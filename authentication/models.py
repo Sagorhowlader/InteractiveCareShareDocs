@@ -33,6 +33,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    create_at = models.DateField(auto_now_add=True)
+    update_at = models.DateField(auto_now=True)
 
     objects = CustomUserManager()
 
