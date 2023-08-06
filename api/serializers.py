@@ -4,6 +4,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from authentication.models import CustomUser
+from .models import Document
 
 
 def validate_email(email):
@@ -49,4 +50,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
+        fields = '__all__'
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
         fields = '__all__'
