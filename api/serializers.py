@@ -42,6 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name': instance.first_name,
             'last_name': instance.last_name,
             'email': instance.email,
+            'is_admin': True if instance.is_staff else False,
             'is_superuser': instance.is_superuser,
             'is_active': instance.is_active,
             'create_at': instance.create_at
