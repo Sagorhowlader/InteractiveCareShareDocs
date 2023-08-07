@@ -22,16 +22,16 @@ FORMAT_CHOICE = (
 
 def validate_file_size(value):
     filesize = value.size
-
-    if filesize > 2 * 1024 * 1024:
-        raise ValidationError("The maximum file size that can be uploaded is 2MB")
+    if filesize > 5 * 1024 * 1024:
+        raise ValidationError("The maximum file size that can be uploaded is 5MB")
     else:
         return value
 
 
 class Document(models.Model):
     upload_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    title = models.CharField(max_length=50, null=False, blank=False, unique=True)
+    title = models.CharField(max_length=50, null=False, blank=False)
+    slug = models.SlugField(unique=True)
     description = models.TextField(null=True)
     format = models.CharField(choices=FORMAT_CHOICE, max_length=5, blank=False)
     file = models.FileField(
@@ -59,8 +59,9 @@ class Document(models.Model):
 
 class DocumentShare(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
+
     share_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='shared_by')
-    share_to = models.ManyToManyField(CustomUser, related_name='shared_to')
+    share_to = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='shared_to')
 
     sent_date = models.DateTimeField(auto_now_add=True)
 

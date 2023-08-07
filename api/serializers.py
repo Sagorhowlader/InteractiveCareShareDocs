@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from authentication.models import CustomUser
-from .models import Document
+from .models import Document, DocumentShare
 
 
 def validate_email(email):
@@ -58,3 +58,35 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = '__all__'
+
+    def to_representation(self, instance):
+        data = super(DocumentSerializer, self).to_representation(instance)
+        data['upload_by'] = f'{instance.upload_by.first_name} {instance.upload_by.last_name}'
+        data['upload_details'] = {
+            'id': instance.upload_by.id,
+            'first_name': instance.upload_by.first_name,
+            'last_name': instance.upload_by.last_name,
+            'email': instance.upload_by.email
+        }
+        return data
+
+
+class DocumentShareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentShare
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        share_by_data = UserSerializer(instance.share_by).data
+        share_to_data = UserSerializer(instance.share_to).data
+        document_data = DocumentSerializer(instance.document).data
+
+        result_data = {
+            'id': instance.id,
+            'share_by': share_by_data,
+            'share_to': share_to_data,
+            'document': document_data,
+            'sent_date': instance.sent_date,
+        }
+
+        return result_data

@@ -1,17 +1,11 @@
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.permissions import BasePermission, AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.serializers import UserSerializer
 from authentication.models import CustomUser
-
-
-class AdminPermissions(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.is_staff:
-            return True
-        return False
+from utils.permission import AdminPermissions
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -34,6 +28,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         try:
+            if kwargs['pk'] != str(request.user.id):
+                return Response(data={'message': 'Error! You have not permission to edit this User!!'},
+                                status=status.HTTP_400_BAD_REQUEST)
             user = CustomUser.objects.get(pk=kwargs['pk'])
             if 'password' in request.data and request.data['password'] == user.password:
                 return Response(data={'message': 'Error! You have entered a previously used password'},
@@ -68,7 +65,6 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             permission_classes = [AllowAny]
         elif self.action == 'destroy':
-            print("trigger")
             permission_classes = [AdminPermissions]
         else:
             permission_classes = [IsAuthenticated]
