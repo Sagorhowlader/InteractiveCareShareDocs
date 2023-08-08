@@ -51,9 +51,9 @@ def document_share_view(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def document_list_by_user(request):
+def document_share_list_by_user(request):
     try:
-        document_list = DocumentShare.objects.filter(share_by=request.user)
+        document_list = DocumentShare.objects.filter(share_by=request.user).order_by('-id')
 
         paginator = PageNumberPagination()
         paginator.page_size = 10

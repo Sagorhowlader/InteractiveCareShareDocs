@@ -1,40 +1,39 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.text import slugify
-from rest_framework import status, viewsets
-from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import Document
 from api.serializers import DocumentSerializer
 from utils.helper import LogHelper
+from utils.permission import UserOwnerPermission, DocumentOwnerOrAdminPermission
 
 
 def generate_unique_slug(title):
     base_slug = slugify(title)
     slug = base_slug
     count = 1
-    while True:
-        if not Document.objects.filter(slug=slug).exists():
-            break
+    while Document.objects.filter(slug=slug).exists():
         slug = f"{base_slug}-{count}"
         count += 1
     return slug
 
 
-def create_error_response(message, status_code):
-    return Response(data={'message': message}, status=status_code)
-
-
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
-    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['title', 'format', 'upload_date', 'description']
+    search_fields = ['title', 'format', 'upload_date', 'description']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def create(self, request, *args, **kwargs):
         request_data = request.data
         if 'file' not in request_data:
-            return Response(data={'message': 'Please upload a file valid file'})
+            return Response(data={'message': 'Please upload a valid file'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
@@ -59,10 +58,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
             request_data = request.data.copy()  # Create a mutable copy
             with transaction.atomic():
                 document = self.get_object()
-                if 'title' in request_data:
-                    if request_data['title'] != document.title:
-                        slug = generate_unique_slug(request_data['title'])
-                        request_data['slug'] = slug
+                if 'title' in request_data and request_data['title'] != document.title:
+                    request_data['slug'] = generate_unique_slug(request_data['title'])
                 if 'file' in request_data:
                     file_format = self.get_upload_file_format(request_data['file'])
                     request_data['format'] = file_format
@@ -83,12 +80,21 @@ class DocumentViewSet(viewsets.ModelViewSet):
             return Response(data={'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
-        data = self.request
-        if data.user.is_superuser:
+        if self.request.user.is_superuser:
             return Document.objects.all()
         else:
-            return Document.objects.filter(upload_by__id=self.request.user.id)
+            return Document.objects.filter(upload_by=self.request.user)
 
     def get_upload_file_format(self, file):
-        file_format = file.name.split('.')[1]
-        return file_format
+        return file.name.split('.')[-1]
+
+    def get_permissions(self):
+        action_to_permission = {
+            'list': IsAdminUser,
+            'partial_update': UserOwnerPermission,
+            'destroy': IsAdminUser,
+            'get_document_details': DocumentOwnerOrAdminPermission
+        }
+
+        permission_classes = [action_to_permission.get(self.action, IsAuthenticated)]
+        return [permission() for permission in permission_classes]

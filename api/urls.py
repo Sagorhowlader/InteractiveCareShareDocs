@@ -12,6 +12,6 @@ router.register(r'document', document_management.DocumentViewSet, basename='docu
 urlpatterns = [
     path('document-download/<int:pk>/', document_download.DownloadFileView.as_view(), name='document-download'),
     path('document-share/', document_share.document_share_view, name='document-share'),
-    path('document-share-list-by-user/', document_share.document_list_by_user, name='document-share-list-by-user')
+    path('document-share-list-by-user/', document_share.document_share_list_by_user, name='document-share-list-by-user')
 ]
 urlpatterns = urlpatterns + router.urls
