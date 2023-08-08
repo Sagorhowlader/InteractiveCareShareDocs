@@ -10,6 +10,9 @@ InteractiveCareShareDocs API Project! This is document management system that us
 - MySQL 8.0
 - Database Migration
 
+## Documentation
+[Google Drive Link](https://drive.google.com/file/d/1palqhTaE51DqOrduDhA6Z_wDkirys9gc/view?usp=sharing)
+
 ### Installation
 
 A step-by-step guide on how to get the development environment running
